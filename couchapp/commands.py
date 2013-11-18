@@ -10,6 +10,7 @@ try:
     import desktopcouch
 except ImportError:
     desktopcouch = None
+import docopt
 
 
 from couchapp import clone_app
@@ -317,48 +318,18 @@ def browse(conf, path, *args, **opts):
     dbs = conf.get_dbs(dest)
     doc.browse(dbs)
 
-def version(conf, *args, **opts):
+def version():
     from couchapp import __version__
     
     print "Couchapp (version %s)" % __version__
     print "Copyright 2008-2010 Benoît Chesneau <benoitc@e-engura.org>"
     print "Licensed under the Apache License, Version 2.0." 
     print ""
-    if opts.get('help', False):
-        usage(conf, *args, **opts)
-    
+    usage()
     return 0
     
-def usage(conf, *args, **opts):
-    if opts.get('version', False):
-        version(conf, *args, **opts)
-    print "Usage: couchapp [OPTIONS] [CMD] [CMDOPTIONS] [ARGS,...]"
-
-    print ""
-    print "Options:"
-    mainopts = []
-    max_opt_len = len(max(globalopts, key=len))
-    for opt in globalopts:
-        print "\t%-*s" % (max_opt_len, get_switch_str(opt))
-        mainopts.append(opt[0])
-
-    print ""
-    print "Commands:"
-    commands = sorted(table.keys())
-    max_len = len(max(commands, key=len))
-    for cmd in commands:
-        opts = table[cmd]
-        # Command name is max_len characters. Used by the %-*s formatting code
-        print "\t%-*s %s" % (max_len, cmd, opts[2])
-        # Print each command's option list
-        cmd_options = opts[1]
-        if cmd_options:
-            max_opt = max(cmd_options, key=lambda o: len(get_switch_str(o)))
-            max_opt_len = len(get_switch_str(max_opt))
-            for opt in cmd_options:
-                print "\t\t%-*s %s" % (max_opt_len, get_switch_str(opt), opt[3])
-            print ""
-        print ""
+def usage():
+    print docopt.printable_usage(usage_doc)
     return 0
 
 def get_switch_str(opt):
@@ -442,3 +413,34 @@ table = {
 
 withcmd = ['generate', 'vendor']
 incouchapp = ['init', 'push', 'generate', 'vendor', 'autopush']
+
+usage_doc = """
+Usage:
+    couchapp init <couchappdir>
+    couchapp push [--no-atomic] [--export] [--output <val>] [-b|--browse] <couchappdir> dest
+        --docid <val>   set docid
+    couchapp clone [--no-atomic] [--export] [--output <val>] [-b|--browse] source <couchappdir>
+        -r --rev <rev>  clone specific revision
+    couchapp pushapps [--no-atomic] [--export] [--output <val>] [-b|--browse] source dest
+    couchapp pushdocs source dest
+    couchapp startapp <couchappdir> name
+    couchapp generate [--template] (app|view|list|show|filter|function|vendor) <couchappdir> name
+    couchapp vendor (-f | --force)
+    couchapp browse <couchappdir> dest
+    couchapp autopush [--no-atomic] [--update-delay <delay>] <couchappdir> dest
+    couchapp (-h | --help)
+    couchapp --version
+
+Options:
+    -d --debug    debug mode
+    -h --help     display help and exit
+    --version     display version and exit
+    -v --verbose  enable additionnal output
+    -q --quiet    don't print any message
+
+    --no-atomic     send attachments one by one [default: False]
+    --export        don't do push, just export doc to stdout
+    --output <val>  if export is selected, output to the file [default: False]
+    -b --browse     open the couchapp in the browser [default: False]
+    --force         force attachments sending [default: False]
+"""

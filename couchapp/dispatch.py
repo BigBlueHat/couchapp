@@ -7,6 +7,8 @@ import logging
 import getopt
 import sys
 
+from docopt import docopt
+
 import couchapp.commands as commands
 from couchapp.errors import AppError, CommandLineError
 from couchapp.config import Config
@@ -38,14 +40,15 @@ def set_logging_level(level=2):
     
 
 def run():
-    sys.exit(dispatch(sys.argv[1:]))
+    parsed_args = docopt(commands.usage_doc)
+    dispatch(parsed_args)
     
     
-def dispatch(args):
+def dispatch(parsed_args):
     set_logging()
     
     try:
-        return _dispatch(args)
+        return _dispatch(parsed_args)
     except AppError, e:
         logger.error("couchapp error: %s" % str(e))
     except KeyboardInterrupt:
@@ -56,31 +59,30 @@ def dispatch(args):
         logger.critical("%s\n\n%s" % (str(e), traceback.format_exc()))
     return -1
     
-def _dispatch(args):
+def _dispatch(parsed_args):
     conf = Config()
 
     # update commands
+    # TODO: re-integrate modules/extensions/stuff
     for mod in conf.extensions:
         cmdtable = getattr(mod, 'cmdtable', {})
         commands.table.update(cmdtable)
         
-    cmd, globalopts, opts, args = _parse(args)
-        
-    if globalopts["help"]:
-        del globalopts["help"]
-        return commands.usage(conf, *args, **globalopts)
-    elif globalopts["version"]:
-        del globalopts["version"]
-        return commands.version(conf, *args, **globalopts)
-    
+
+    if parsed_args["--version"]:
+        return commands.version()
+
+    print(parsed_args)
+    exit()
+
     verbose = 2
-    if globalopts["debug"]:
+    if parsed_args["--debug"]:
         verbose = 1
         import restkit
         restkit.set_logging("debug")
-    elif globalopts["verbose"]:
+    elif parsed_args["--verbose"]:
         verbose = 1
-    elif globalopts["quiet"]:
+    elif parsed_args["--quiet"]:
         verbose = 0
         
     set_logging_level(verbose)
